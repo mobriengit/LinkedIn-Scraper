@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     unzip \
     curl \
+    jq \  # ✅ Install jq to parse JSON
     xvfb \
     libxi6 \
     libgconf-2-4 \
@@ -44,3 +45,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Start script
 CMD ["python", "main.py"]
+
