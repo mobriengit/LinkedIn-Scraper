@@ -10,7 +10,6 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
-from twocaptcha import TwoCaptcha
 
 # Load input parameters from Apify
 APIFY_TOKEN = os.getenv("APIFY_TOKEN")
@@ -23,7 +22,7 @@ if input_data is None or "value" not in input_data:
         "search_query": "Small Businesses Toronto",
         "linkedin_cookies": "[]",
         "use_proxy": True,
-        "use_captcha_solver": True
+        "use_captcha_solver": False  # Disabled CAPTCHA solver
     }
 else:
     default_input = input_data["value"]
@@ -31,10 +30,7 @@ else:
 search_query = default_input.get("search_query", "Small Businesses Toronto")
 linkedin_cookies = json.loads(default_input.get("linkedin_cookies", "[]"))
 use_proxy = default_input.get("use_proxy", True)
-use_captcha_solver = default_input.get("use_captcha_solver", True)
-
-TWO_CAPTCHA_API_KEY = os.getenv("TWO_CAPTCHA_API_KEY")
-solver = TwoCaptcha(TWO_CAPTCHA_API_KEY)
+use_captcha_solver = False  # Ensuring CAPTCHA solver is OFF
 
 CHROMIUM_PATH = "/usr/bin/google-chrome-stable"
 CHROMEDRIVER_PATH = "/usr/local/bin/chromedriver"
@@ -60,13 +56,9 @@ def setup_driver():
     return driver
 
 def solve_captcha(image_url):
-    """Uses 2Captcha to solve CAPTCHAs."""
-    try:
-        result = solver.normal(image_url)
-        return result["code"]
-    except Exception as e:
-        print("CAPTCHA solving failed:", str(e))
-        return None
+    """Bypasses CAPTCHA solving (disabled)."""
+    print("⚠️ CAPTCHA solver disabled.")
+    return None
 
 def login_linkedin(driver, cookies):
     """Logs into LinkedIn using stored cookies."""
@@ -119,20 +111,19 @@ if __name__ == "__main__":
     driver = setup_driver()
     login_linkedin(driver, linkedin_cookies)
 
-    print(f"Searching LinkedIn for: {search_query}")
+    print(f"🔍 Searching LinkedIn for: {search_query}")
     page_source = search_businesses(driver, search_query)
 
-    if use_captcha_solver:
-        solve_captcha(driver.current_url)
-    
+    print("⚠️ Skipping CAPTCHA solver.")  # Ensuring CAPTCHA is not triggered
+
     businesses = extract_businesses(page_source)
-    print(f"Found {len(businesses)} businesses.")
+    print(f"✅ Found {len(businesses)} businesses.")
 
     if businesses:
         save_to_apify(businesses)
-        print("Data saved to Apify dataset.")
+        print("📦 Data saved to Apify dataset.")
     else:
-        print("No results found.")
+        print("❌ No results found.")
 
     driver.quit()
 
