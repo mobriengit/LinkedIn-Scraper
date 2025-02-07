@@ -15,20 +15,21 @@ echo "✅ Google Chrome Installed: $(google-chrome-stable --version)"
 CHROME_VERSION=$(google-chrome-stable --version | awk '{print $3}')
 echo "🔹 Chrome Version Detected: $CHROME_VERSION"
 
-# Fetch ChromeDriver version using the latest stable releases
+# Fetch ChromeDriver version
 echo "🔹 Fetching ChromeDriver version..."
-CHROMEDRIVER_VERSION=$(curl -sS https://googlechromelabs.github.io/chrome-for-testing/known-good-versions.json | jq -r '.versions | map(select(.channel == "Stable")) | .[-1].version')
+CHROMEDRIVER_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/latest-patch-versions-per-build.json" | jq -r --arg ver "$CHROME_VERSION" '.builds[$ver]')
 
 if [[ -z "$CHROMEDRIVER_VERSION" || "$CHROMEDRIVER_VERSION" == "null" ]]; then
-    echo "❌ Error: Unable to determine the correct ChromeDriver version. Exiting..."
-    exit 1
+    echo "❌ API did not return a valid ChromeDriver version. Using fallback..."
+    CHROMEDRIVER_VERSION="$CHROME_VERSION"
 fi
 
 echo "✅ ChromeDriver Version Determined: $CHROMEDRIVER_VERSION"
 
-# Download ChromeDriver
+# Construct the ChromeDriver URL
 CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/$CHROMEDRIVER_VERSION/linux64/chromedriver-linux64.zip"
 
+# Check if the ChromeDriver URL is valid
 if curl --output /dev/null --silent --head --fail "$CHROMEDRIVER_URL"; then
     echo "🔹 Downloading ChromeDriver..."
     wget -q "$CHROMEDRIVER_URL"
@@ -50,5 +51,3 @@ rm -rf chromedriver-linux64.zip chromedriver-linux64
 echo "✅ Chrome and ChromeDriver Setup Complete!"
 google-chrome-stable --version
 chromedriver --version
-
-
