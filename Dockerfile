@@ -23,16 +23,16 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the setup script
-COPY setup_chromedriver.sh /setup_chromedriver.sh
+COPY setup_chromedrive.sh /setup_chromedriver.sh
 
 # Ensure the script is executable
-RUN chmod +x /setup_chromedriver.sh
+RUN chmod +x /setup_chromedrive.sh
 
 # Run the script to install Chrome and ChromeDriver
-RUN /setup_chromedriver.sh
+RUN /setup_chromedrive.sh
 
 # Verify Chrome and ChromeDriver installation
-RUN google-chrome-stable --version && chromedriver --version
+RUN google-chrome-stable --version && chromedrive --version
 
 # Copy project files
 COPY . /app
