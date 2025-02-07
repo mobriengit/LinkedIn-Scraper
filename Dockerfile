@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     unzip \
     curl \
-    jq \ 
+    jq \
     xvfb \
     libxi6 \
     libgconf-2-4 \
@@ -21,18 +21,14 @@ RUN apt-get update && apt-get install -y \
     gnupg \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Google Chrome
-RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /usr/share/keyrings/google-chrome-keyring.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
-    apt-get update && apt-get install -y google-chrome-stable
+# Copy the setup script
+COPY setup_chromedriver.sh /setup_chromedriver.sh
 
-# Install ChromeDriver (matching the installed Chrome version)
-RUN CHROME_VERSION=$(google-chrome-stable --version | awk '{print $3}') && \
-    CHROMEDRIVER_VERSION=$(curl -sS https://googlechromelabs.github.io/chrome-for-testing/latest-patch-versions.json | jq -r --arg ver "$CHROME_VERSION" '.channels.Stable[$ver]') && \
-    wget -q "https://storage.googleapis.com/chrome-for-testing-public/$CHROMEDRIVER_VERSION/linux64/chromedriver-linux64.zip" && \
-    unzip chromedriver-linux64.zip && \
-    mv chromedriver-linux64/chromedriver /usr/local/bin/chromedriver && \
-    chmod +x /usr/local/bin/chromedriver
+# Ensure the script is executable
+RUN chmod +x /setup_chromedriver.sh
+
+# Run the script to install Chrome and ChromeDriver
+RUN /setup_chromedriver.sh
 
 # Verify Chrome and ChromeDriver installation
 RUN google-chrome-stable --version && chromedriver --version
@@ -45,4 +41,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Start script
 CMD ["python", "main.py"]
+
 
