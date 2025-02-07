@@ -55,34 +55,41 @@ def setup_driver():
     return driver
 
 def login_linkedin(driver, cookies):
-    """Logs into LinkedIn using stored cookies and verifies login success."""
+    """Logs into LinkedIn using stored cookies."""
     driver.get("https://www.linkedin.com/")
-
+    
     for cookie in cookies:
         driver.add_cookie(cookie)
     
     driver.refresh()
     time.sleep(random.uniform(2, 5))
 
-    if "feed" in driver.current_url or "mynetwork" in driver.current_url:
-        print("✅ Successfully logged into LinkedIn!")
-    else:
+    # Check if login was successful
+    page_title = driver.title
+    if "Sign In" in page_title or page_title == "":
         print("❌ LinkedIn login failed. Check cookies.")
-        driver.save_screenshot("login_failed.png")
+        return False  # Indicate failure
+    else:
+        print(f"✅ Successfully logged into LinkedIn. Current Page Title: {page_title}")
+        return True  # Indicate success
+
 
 def search_businesses(driver, query):
-    """Searches LinkedIn for businesses and ensures page is loading."""
+    """Searches LinkedIn for businesses matching the query."""
     search_url = f"https://www.linkedin.com/search/results/companies/?keywords={query}"
     driver.get(search_url)
     time.sleep(random.uniform(2, 5))
-    
-    print(f"🔍 Current Page Title: {driver.title}")
-    
-    if "Sign In" in driver.title or "LinkedIn" in driver.title:
-        print("❌ LinkedIn search failed! Possible login issue.")
-        driver.save_screenshot("search_failed.png")
-    
+
+    # Print the current page title to check if we're logged in
+    page_title = driver.title
+    print(f"🔍 Current Page Title: {page_title}")
+
+    if "Sign In" in page_title or page_title == "":
+        print("❌ LinkedIn login failed. Exiting...")
+        return None  # Return nothing if login failed
+
     return driver.page_source
+
 
 def extract_businesses(page_source):
     """Extracts business data from LinkedIn search results and debugs elements found."""
@@ -115,19 +122,28 @@ def save_to_apify(data):
 
 if __name__ == "__main__":
     driver = setup_driver()
-    login_linkedin(driver, linkedin_cookies)
-    
+
+    # Ensure login works before proceeding
+    if not login_linkedin(driver, linkedin_cookies):
+        print("❌ Login failed. Exiting script.")
+        driver.quit()
+        exit(1)  # Exit script
+
     print(f"🔍 Searching LinkedIn for: {search_query}")
     page_source = search_businesses(driver, search_query)
-    
+
+    if page_source is None:
+        print("❌ Search failed due to login issues. Exiting...")
+        driver.quit()
+        exit(1)
+
     businesses = extract_businesses(page_source)
     print(f"✅ Found {len(businesses)} businesses.")
 
     if businesses:
         save_to_apify(businesses)
-        print("📊 Data saved to Apify dataset.")
+        print("✅ Data saved to Apify dataset.")
     else:
         print("❌ No results found.")
 
     driver.quit()
-
