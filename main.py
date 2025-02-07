@@ -1,5 +1,3 @@
-pip install selenium beautifulsoup4 apify-client
-
 import os
 import json
 import time
