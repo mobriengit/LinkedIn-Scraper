@@ -14,18 +14,36 @@ from bs4 import BeautifulSoup
 # Load input parameters from Apify
 APIFY_TOKEN = os.getenv("APIFY_TOKEN")
 client = ApifyClient(APIFY_TOKEN)
-input_data = client.key_value_store("default").get_record("INPUT")
 
-if input_data is None or "value" not in input_data:
-    print("❌ ERROR: No input data found in Apify! Ensure JSON input is correctly set.")
-    exit(1)  # Exit script
+try:
+    input_data = client.key_value_store("default").get_record("INPUT")
+    if input_data and "value" in input_data:
+        default_input = input_data["value"]
+    else:
+        print("⚠️ Warning: No input data found in Apify storage. Using default values.")
+        default_input = {
+            "search_query": "Small Businesses Toronto",
+            "linkedin_cookies": "[]",
+            "use_proxy": "apify_rotating",
+            "use_captcha_solver": False
+        }
+except Exception as e:
+    print(f"❌ ERROR: Unable to retrieve input from Apify: {str(e)}")
+    exit(1)
 
-# Use the input JSON data
-default_input = input_data["value"]
+# Extract input parameters
 search_query = default_input.get("search_query", "").strip()
-linkedin_cookies = json.loads(default_input.get("linkedin_cookies", "[]"))
 use_proxy = default_input.get("use_proxy", "apify_rotating")
 use_captcha_solver = default_input.get("use_captcha_solver", False)
+
+# Ensure linkedin_cookies is correctly parsed
+try:
+    linkedin_cookies = json.loads(default_input.get("linkedin_cookies", "[]"))
+    if not isinstance(linkedin_cookies, list):
+        raise ValueError("Parsed linkedin_cookies is not a list")
+except Exception as e:
+    print(f"❌ ERROR: Failed to parse 'linkedin_cookies': {str(e)}")
+    exit(1)
 
 # Validate mandatory fields
 if not search_query:
@@ -140,4 +158,3 @@ if __name__ == "__main__":
         print("❌ No results found.")
 
     driver.quit()
-
