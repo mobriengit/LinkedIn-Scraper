@@ -2,3 +2,6 @@ selenium
 beautifulsoup4
 apify-client
 webdriver-manager
+requests
+stem
+twocaptcha
