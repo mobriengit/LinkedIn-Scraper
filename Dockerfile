@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     unzip \
     curl \
-    jq \  # ✅ Install jq to parse JSON
+    jq \ 
     xvfb \
     libxi6 \
     libgconf-2-4 \
