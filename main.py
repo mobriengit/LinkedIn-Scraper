@@ -52,7 +52,10 @@ def setup_driver():
     if use_proxy:
         chrome_options.add_argument("--proxy-server=http://proxy.apify.com:8000")
     
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+    chromium_path = "/usr/bin/chromium-browser"
+    chrome_options.binary_location = chromium_path
+    driver = webdriver.Chrome(options=chrome_options)
+
     return driver
 
 def solve_captcha(image_url):
