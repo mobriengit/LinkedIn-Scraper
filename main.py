@@ -22,7 +22,7 @@ if input_data is None or "value" not in input_data:
         "search_query": "Small Businesses Toronto",
         "linkedin_cookies": "[]",
         "use_proxy": True,
-        "use_captcha_solver": False  # Disabled CAPTCHA solver
+        "use_captcha_solver": False  # Disabled for now
     }
 else:
     default_input = input_data["value"]
@@ -30,7 +30,6 @@ else:
 search_query = default_input.get("search_query", "Small Businesses Toronto")
 linkedin_cookies = json.loads(default_input.get("linkedin_cookies", "[]"))
 use_proxy = default_input.get("use_proxy", True)
-use_captcha_solver = False  # Ensuring CAPTCHA solver is OFF
 
 CHROMIUM_PATH = "/usr/bin/google-chrome-stable"
 CHROMEDRIVER_PATH = "/usr/local/bin/chromedriver"
@@ -55,52 +54,59 @@ def setup_driver():
     driver = webdriver.Chrome(service=service, options=chrome_options)
     return driver
 
-def solve_captcha(image_url):
-    """Bypasses CAPTCHA solving (disabled)."""
-    print("⚠️ CAPTCHA solver disabled.")
-    return None
-
 def login_linkedin(driver, cookies):
-    """Logs into LinkedIn using stored cookies."""
+    """Logs into LinkedIn using stored cookies and verifies login success."""
     driver.get("https://www.linkedin.com/")
+
     for cookie in cookies:
         driver.add_cookie(cookie)
+    
     driver.refresh()
     time.sleep(random.uniform(2, 5))
 
+    if "feed" in driver.current_url or "mynetwork" in driver.current_url:
+        print("✅ Successfully logged into LinkedIn!")
+    else:
+        print("❌ LinkedIn login failed. Check cookies.")
+        driver.save_screenshot("login_failed.png")
+
 def search_businesses(driver, query):
-    """Searches LinkedIn for businesses matching SMB criteria."""
+    """Searches LinkedIn for businesses and ensures page is loading."""
     search_url = f"https://www.linkedin.com/search/results/companies/?keywords={query}"
     driver.get(search_url)
     time.sleep(random.uniform(2, 5))
+    
+    print(f"🔍 Current Page Title: {driver.title}")
+    
+    if "Sign In" in driver.title or "LinkedIn" in driver.title:
+        print("❌ LinkedIn search failed! Possible login issue.")
+        driver.save_screenshot("search_failed.png")
+    
     return driver.page_source
 
 def extract_businesses(page_source):
-    """Extracts business data including emails from LinkedIn search results."""
+    """Extracts business data from LinkedIn search results and debugs elements found."""
     soup = BeautifulSoup(page_source, "html.parser")
     businesses = []
 
     results = soup.find_all("div", class_="entity-result")
+    
+    if not results:
+        print("⚠️ No business elements found! LinkedIn layout might have changed.")
+        with open("debug_page.html", "w", encoding="utf-8") as f:
+            f.write(page_source)
+        return businesses
+
     for result in results:
         try:
             name = result.find("span", class_="entity-result__title-text").text.strip()
             profile_link = result.find("a", class_="app-aware-link")["href"].split("?")[0]
             website = result.find("a", class_="entity-result__primary-subtitle")["href"] if result.find("a", class_="entity-result__primary-subtitle") else "N/A"
-            email = scrape_email_from_website(website) if website != "N/A" else "N/A"
-            businesses.append({"name": name, "profile_link": profile_link, "website": website, "email": email})
+            businesses.append({"name": name, "profile_link": profile_link, "website": website})
         except AttributeError:
             continue
-    return businesses
 
-def scrape_email_from_website(website):
-    """Extracts contact email from business websites."""
-    try:
-        response = requests.get(website, timeout=5)
-        if response.status_code == 200:
-            emails = set(re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', response.text))
-            return list(emails)[0] if emails else "N/A"
-    except:
-        return "N/A"
+    return businesses
 
 def save_to_apify(data):
     """Saves extracted business data to Apify's key-value store."""
@@ -110,18 +116,16 @@ def save_to_apify(data):
 if __name__ == "__main__":
     driver = setup_driver()
     login_linkedin(driver, linkedin_cookies)
-
+    
     print(f"🔍 Searching LinkedIn for: {search_query}")
     page_source = search_businesses(driver, search_query)
-
-    print("⚠️ Skipping CAPTCHA solver.")  # Ensuring CAPTCHA is not triggered
-
+    
     businesses = extract_businesses(page_source)
     print(f"✅ Found {len(businesses)} businesses.")
 
     if businesses:
         save_to_apify(businesses)
-        print("📦 Data saved to Apify dataset.")
+        print("📊 Data saved to Apify dataset.")
     else:
         print("❌ No results found.")
 
