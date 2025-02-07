@@ -1,4 +1,6 @@
 LinkedIn Scraper 🚀
+
+
 A Python-based LinkedIn business scraper that extracts business details using Selenium, BeautifulSoup, and Apify. This tool automates searches and retrieves data from LinkedIn.
 
 📌 Features
