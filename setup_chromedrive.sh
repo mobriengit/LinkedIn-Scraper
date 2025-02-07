@@ -15,16 +15,9 @@ echo "✅ Google Chrome Installed: $(google-chrome-stable --version)"
 CHROME_VERSION=$(google-chrome-stable --version | awk '{print $3}')
 echo "🔹 Chrome Version Detected: $CHROME_VERSION"
 
-# Fetch ChromeDriver version
+# Fetch ChromeDriver version using the latest stable releases
 echo "🔹 Fetching ChromeDriver version..."
-API_RESPONSE=$(curl -sS https://googlechromelabs.github.io/chrome-for-testing/latest-patch-versions.json)
-
-if ! echo "$API_RESPONSE" | jq empty > /dev/null 2>&1; then
-    echo "❌ API response error. Falling back to default ChromeDriver version."
-    CHROMEDRIVER_VERSION="133.0.6943.50"
-else
-    CHROMEDRIVER_VERSION=$(echo "$API_RESPONSE" | jq -r --arg ver "$CHROME_VERSION" '.channels.Stable[$ver] // "133.0.6943.50"')
-fi
+CHROMEDRIVER_VERSION=$(curl -sS https://googlechromelabs.github.io/chrome-for-testing/known-good-versions.json | jq -r '.versions | map(select(.channel == "Stable")) | .[-1].version')
 
 if [[ -z "$CHROMEDRIVER_VERSION" || "$CHROMEDRIVER_VERSION" == "null" ]]; then
     echo "❌ Error: Unable to determine the correct ChromeDriver version. Exiting..."
@@ -57,4 +50,5 @@ rm -rf chromedriver-linux64.zip chromedriver-linux64
 echo "✅ Chrome and ChromeDriver Setup Complete!"
 google-chrome-stable --version
 chromedriver --version
+
 
