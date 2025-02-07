@@ -17,28 +17,26 @@ client = ApifyClient(APIFY_TOKEN)
 input_data = client.key_value_store("default").get_record("INPUT")
 
 if input_data is None or "value" not in input_data:
-    print("⚠️ Warning: No input data found in Apify. Requesting input from user.")
+    print("❌ ERROR: No input data found in Apify! Ensure JSON input is correctly set.")
+    exit(1)  # Exit script
 
-    # Ask for user input if Apify input is missing
-    search_query = input("🔍 Enter search query (e.g., 'Marketing Agencies in New York'): ").strip()
-    linkedin_cookie = input("🔑 Enter LinkedIn li_at cookie: ").strip()
-
-    default_input = {
-        "search_query": search_query,
-        "linkedin_cookies": json.dumps([{"name": "li_at", "value": linkedin_cookie}]),
-        "use_proxy": "apify_rotating",
-        "use_captcha_solver": False
-    }
-else:
-    default_input = input_data["value"]
-
-# Print received input
-print("🔍 Received Input Data:", json.dumps(default_input, indent=2))
-
-search_query = default_input.get("search_query", "Small Businesses Toronto")
+# Use the input JSON data
+default_input = input_data["value"]
+search_query = default_input.get("search_query", "").strip()
 linkedin_cookies = json.loads(default_input.get("linkedin_cookies", "[]"))
-use_proxy = default_input.get("use_proxy", True)
+use_proxy = default_input.get("use_proxy", "apify_rotating")
 use_captcha_solver = default_input.get("use_captcha_solver", False)
+
+# Validate mandatory fields
+if not search_query:
+    print("❌ ERROR: Missing 'search_query' in input JSON!")
+    exit(1)
+
+if not linkedin_cookies:
+    print("❌ ERROR: Missing 'linkedin_cookies' in input JSON!")
+    exit(1)
+
+print("✅ Loaded Input Data:", json.dumps(default_input, indent=2))
 
 CHROMIUM_PATH = "/usr/bin/google-chrome-stable"
 CHROMEDRIVER_PATH = "/usr/local/bin/chromedriver"
@@ -142,3 +140,4 @@ if __name__ == "__main__":
         print("❌ No results found.")
 
     driver.quit()
+
