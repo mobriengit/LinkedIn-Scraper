@@ -18,7 +18,19 @@ from twocaptcha import TwoCaptcha
 # Load input parameters from Apify
 APIFY_TOKEN = os.getenv("APIFY_TOKEN")
 client = ApifyClient(APIFY_TOKEN)
-default_input = client.key_value_store("default").get_record("INPUT")["value"]
+input_data = client.key_value_store("default").get_record("INPUT")
+
+if input_data is None or "value" not in input_data:
+    print("⚠️ Warning: No input data found in Apify. Using default values.")
+    default_input = {
+        "search_query": "Small Businesses Toronto",
+        "linkedin_cookies": "[]",
+        "use_proxy": True,
+        "use_captcha_solver": True
+    }
+else:
+    default_input = input_data["value"]
+
 
 search_query = default_input.get("search_query", "Small Businesses Toronto")
 linkedin_cookies = json.loads(default_input.get("linkedin_cookies", "[]"))
