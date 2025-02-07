@@ -1,7 +1,10 @@
-# Use Apify’s official Python image
+# Use Apify’s Python image
 FROM apify/actor-python:3.9
 
-# Set working directory inside the container
+# Install Tor
+RUN apt-get update && apt-get install -y tor
+
+# Set working directory
 WORKDIR /app
 
 # Copy all project files to the container
@@ -10,5 +13,5 @@ COPY . /app
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Define the default command to run the scraper
-CMD ["python", "main.py"]
+# Start Tor service
+CMD service tor start && python main.py
