@@ -9,7 +9,6 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from twocaptcha import TwoCaptcha
 
@@ -37,6 +36,9 @@ use_captcha_solver = default_input.get("use_captcha_solver", True)
 TWO_CAPTCHA_API_KEY = os.getenv("TWO_CAPTCHA_API_KEY")
 solver = TwoCaptcha(TWO_CAPTCHA_API_KEY)
 
+CHROMIUM_PATH = "/usr/bin/google-chrome-stable"
+CHROMEDRIVER_PATH = "/usr/local/bin/chromedriver"
+
 def setup_driver():
     """Configures a stealth Chrome WebDriver with Apify proxy."""
     chrome_options = Options()
@@ -52,10 +54,9 @@ def setup_driver():
     if use_proxy:
         chrome_options.add_argument("--proxy-server=http://proxy.apify.com:8000")
     
-    chromium_path = "/usr/bin/chromium-browser"
-    chrome_options.binary_location = chromium_path
-    driver = webdriver.Chrome(options=chrome_options)
-
+    chrome_options.binary_location = CHROMIUM_PATH
+    service = Service(CHROMEDRIVER_PATH)
+    driver = webdriver.Chrome(service=service, options=chrome_options)
     return driver
 
 def solve_captcha(image_url):
@@ -91,8 +92,8 @@ def extract_businesses(page_source):
     for result in results:
         try:
             name = result.find("span", class_="entity-result__title-text").text.strip()
-            profile_link = result.find("a", class_="app-aware-link")['href'].split("?")[0]
-            website = result.find("a", class_="entity-result__primary-subtitle")['href'] if result.find("a", class_="entity-result__primary-subtitle") else "N/A"
+            profile_link = result.find("a", class_="app-aware-link")["href"].split("?")[0]
+            website = result.find("a", class_="entity-result__primary-subtitle")["href"] if result.find("a", class_="entity-result__primary-subtitle") else "N/A"
             email = scrape_email_from_website(website) if website != "N/A" else "N/A"
             businesses.append({"name": name, "profile_link": profile_link, "website": website, "email": email})
         except AttributeError:
@@ -134,3 +135,4 @@ if __name__ == "__main__":
         print("No results found.")
 
     driver.quit()
+
