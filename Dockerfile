@@ -15,7 +15,6 @@ RUN apt-get update && apt-get install -y \
     libnss3 \
     libxss1 \
     libappindicator1 \
-    libindicator7 \
     fonts-liberation \
     libgbm1 \
     && rm -rf /var/lib/apt/lists/*
@@ -28,4 +27,3 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Start script
 CMD ["python", "main.py"]
-
