@@ -11,8 +11,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
-from stem.control import Controller
-from stem import Signal
 from twocaptcha import TwoCaptcha
 
 # Load input parameters from Apify
@@ -31,7 +29,6 @@ if input_data is None or "value" not in input_data:
 else:
     default_input = input_data["value"]
 
-
 search_query = default_input.get("search_query", "Small Businesses Toronto")
 linkedin_cookies = json.loads(default_input.get("linkedin_cookies", "[]"))
 use_proxy = default_input.get("use_proxy", True)
@@ -40,17 +37,8 @@ use_captcha_solver = default_input.get("use_captcha_solver", True)
 TWO_CAPTCHA_API_KEY = os.getenv("TWO_CAPTCHA_API_KEY")
 solver = TwoCaptcha(TWO_CAPTCHA_API_KEY)
 
-PROXY_PORT = 9050  # Tor proxy default port
-
-def renew_tor_ip():
-    """Renews Tor IP to avoid detection."""
-    with Controller.from_port(port=9051) as controller:
-        controller.authenticate()
-        controller.signal(Signal.NEWNYM)
-    time.sleep(10)
-
 def setup_driver():
-    """Configures a stealth Chrome WebDriver with proxy and CAPTCHA bypassing."""
+    """Configures a stealth Chrome WebDriver with Apify proxy."""
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
@@ -62,7 +50,7 @@ def setup_driver():
     chrome_options.add_experimental_option("useAutomationExtension", False)
     
     if use_proxy:
-        chrome_options.add_argument(f"--proxy-server=socks5://127.0.0.1:{PROXY_PORT}")
+        chrome_options.add_argument("--proxy-server=http://proxy.apify.com:8000")
     
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
     return driver
@@ -124,9 +112,6 @@ def save_to_apify(data):
     dataset.push_items(data)
 
 if __name__ == "__main__":
-    if use_proxy:
-        renew_tor_ip()
-    
     driver = setup_driver()
     login_linkedin(driver, linkedin_cookies)
 
