@@ -21,14 +21,14 @@ RUN apt-get update && apt-get install -y \
     gnupg \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the setup script
-COPY setup_chromedriver.sh /setup_chromedriver.sh
+# Copy the setup script with the correct filename
+COPY setup_chromedrive.sh /setup_chromedrive.sh
 
 # Ensure the script is executable
-RUN chmod +x /setup_chromedriver.sh
+RUN chmod +x /setup_chromedrive.sh
 
 # Run the script to install Chrome and ChromeDriver
-RUN /setup_chromedriver.sh
+RUN /setup_chromedrive.sh
 
 # Verify Chrome and ChromeDriver installation
 RUN google-chrome-stable --version && chromedriver --version
@@ -41,5 +41,3 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Start script
 CMD ["python", "main.py"]
-
-
