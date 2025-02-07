@@ -2,7 +2,7 @@
 FROM apify/actor-python:3.9
 
 # Install Tor
-RUN apt-get update && apt-get install -y tor
+# RUN apt-get update && apt-get install -y tor
 
 # Set working directory
 WORKDIR /app
